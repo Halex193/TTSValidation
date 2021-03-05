@@ -1,13 +1,20 @@
 # AI speech-to-text and text-to-speech validation
 
-## Prerequisites
+## Docker setup
+
+```bash
+docker build -t validation-project . && docker run --name validation-project-container validation-project 
+```
+
+## Virtualenv Setup
+
+### Prerequisites
 - Python
 - Pip
 - Virtualenv
+- FFmpeg
 
 Detailed installation instructions [here](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
-
-## Setup
 
 ### Create virtual environment:
 On macOS and Linux:
@@ -41,5 +48,5 @@ Create the file `files/data.txt` with texts on separate lines
 
 ### Run the test
 ```bash
-python3 tests.py
+python3 src/tests.py
 ```
