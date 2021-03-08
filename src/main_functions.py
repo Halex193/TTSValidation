@@ -5,7 +5,6 @@ from pydub import AudioSegment
 
 def text_to_speech(text, file_path):
     language = 'en'
-    # file_object = gTTS(text=initial_text, lang=language, tld='ca', slow=False)
     file_object = gTTS(text=text, lang=language, slow=False)
     file_object.save(file_path)
 
@@ -15,10 +14,13 @@ def speech_to_text(file_path):
 
     with sr.AudioFile(file_path) as source:
         recorded_audio = recognizer.record(source)
-        text = recognizer.recognize_google(
-            recorded_audio,
-            language="en",
-        )
+        try:
+            text = recognizer.recognize_google(
+                recorded_audio,
+                language="en",
+            )
+        except sr.UnknownValueError:
+            return ""
         return text
 
 
