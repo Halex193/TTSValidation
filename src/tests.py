@@ -94,16 +94,16 @@ if __name__ == "__main__":
     files_folder = 'files'
     mp3_folder = f'{files_folder}/mp3-files'
     wav_folder = f'{files_folder}/wav-files'
-    data_file_path = f'{files_folder}/data.txt'
+    medicine_data_file_path = f'{files_folder}/culinary_data.txt'
 
     create_folder(files_folder)
     create_folder(mp3_folder)
     create_folder(wav_folder)
 
-    if not os.path.exists(data_file_path):
-        raise FileNotFoundError(f"Please create the file {data_file_path} with texts on separate lines")
+    if not os.path.exists(medicine_data_file_path):
+        raise FileNotFoundError(f"Please create the file {medicine_data_file_path} with texts on separate lines")
 
-    with open(data_file_path) as data_file:
+    with open(medicine_data_file_path) as data_file:
         i = 1
         error_sum=0
 
