@@ -94,7 +94,7 @@ if __name__ == "__main__":
     files_folder = 'files'
     mp3_folder = f'{files_folder}/mp3-files'
     wav_folder = f'{files_folder}/wav-files'
-    medicine_data_file_path = f'{files_folder}/culinary_data.txt'
+    medicine_data_file_path = f'{files_folder}/lyrics_data.txt'
 
     create_folder(files_folder)
     create_folder(mp3_folder)

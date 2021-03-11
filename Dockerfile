@@ -12,7 +12,7 @@ RUN pip install -r requirements.txt
 
 # copy the content of the local src directory to the working directory
 COPY src/ .
-COPY files/culinary_data.txt files/culinary_data.txt
+COPY files/lyrics_data.txt files/lyrics_data.txt
 
 # command to run on container start
 CMD [ "python3", "./tests.py" ]
