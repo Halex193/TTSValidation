@@ -88,24 +88,13 @@ def create_folder(folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
+def run_file(file_path):
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Please create the file {file_path} with texts on separate lines")
 
-if __name__ == "__main__":
-    keep_audio = True
-    files_folder = 'files'
-    mp3_folder = f'{files_folder}/mp3-files'
-    wav_folder = f'{files_folder}/wav-files'
-    medicine_data_file_path = f'{files_folder}/lyrics_data.txt'
-
-    create_folder(files_folder)
-    create_folder(mp3_folder)
-    create_folder(wav_folder)
-
-    if not os.path.exists(medicine_data_file_path):
-        raise FileNotFoundError(f"Please create the file {medicine_data_file_path} with texts on separate lines")
-
-    with open(medicine_data_file_path) as data_file:
+    with open(file_path) as data_file:
         i = 1
-        error_sum=0
+        error_sum = 0
 
         for line in data_file:
             mp3_path = f"{mp3_folder}/test{i}.mp3"
@@ -122,12 +111,39 @@ if __name__ == "__main__":
 
             error = wer(line.split(), result.split())
 
-            error = 1-((len(line)-error)/len(line))
+            error = 1 - ((len(line) - error) / len(line))
 
-            error_sum+=error
+            error_sum += error
             print(f"Error {i}: {error}")
 
             i += 1
 
-        total_error = error_sum/(i-1)
-        print(f"Average error: {total_error}")
+        total_error = error_sum / (i - 1)
+        print(f"Average error for {data_file}: {total_error}")
+
+        return total_error
+
+
+if __name__ == "__main__":
+    keep_audio = True
+    files_folder = 'files'
+    mp3_folder = f'{files_folder}/mp3-files'
+    wav_folder = f'{files_folder}/wav-files'
+
+    create_folder(files_folder)
+    create_folder(mp3_folder)
+    create_folder(wav_folder)
+
+    medicine_data_file_path = f'{files_folder}/medicine_data.txt'
+    culinary_data_file_path = f'{files_folder}/culinary_data.txt'
+    artistic_data_file_path = f'{files_folder}/artistic_data.txt'
+    lyrics_data_file_path = f'{files_folder}/lyrics_data.txt'
+
+    e1 = run_file(medicine_data_file_path)
+    e2 = run_file(culinary_data_file_path)
+    e3 = run_file(artistic_data_file_path)
+    e4 = run_file(lyrics_data_file_path)
+
+    avg_e = (e1+e2+e3+e4)/4
+
+    print(f"Average error: {avg_e}")
