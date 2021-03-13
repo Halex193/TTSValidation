@@ -92,9 +92,11 @@ def run_file(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Please create the file {file_path} with texts on separate lines")
 
+    acc_list = []
+
     with open(file_path) as data_file:
         i = 1
-        error_sum = 0
+        accuracy_sum = 0
 
         for line in data_file:
             mp3_path = f"{mp3_folder}/test{i}.mp3"
@@ -103,6 +105,7 @@ def run_file(file_path):
                 result = run_test(line.rstrip(), mp3_path, wav_path)
             except Exception as e:
                 print("SKIP...")
+                continue
             if not keep_audio:
                 os.remove(mp3_path)
                 os.remove(wav_path)
@@ -111,17 +114,26 @@ def run_file(file_path):
 
             error = wer(line.split(), result.split())
 
-            error = 1 - ((len(line) - error) / len(line))
+            accuracy = (len(line) - error) / len(line)
 
-            error_sum += error
-            print(f"Error {i}: {error}")
+            acc_list.append(accuracy)
+
+            accuracy_sum += accuracy
+            print(f"Accuracy {i}: {accuracy*100}%")
 
             i += 1
 
-        total_error = error_sum / (i - 1)
-        print(f"Average error for {data_file}: {total_error}")
+        total_accuracy = accuracy_sum / (i - 1)
+        print(f"Average accuracy for {data_file}: {total_accuracy*100}%")
 
-        return total_error
+        std_dev = 0
+
+        for ac in acc_list:
+            std_dev += (ac-total_accuracy)**2
+
+        std_dev /= len(acc_list)
+
+        return std_dev
 
 
 if __name__ == "__main__":
@@ -139,11 +151,13 @@ if __name__ == "__main__":
     artistic_data_file_path = f'{files_folder}/artistic_data.txt'
     lyrics_data_file_path = f'{files_folder}/lyrics_data.txt'
 
-    e1 = run_file(medicine_data_file_path)
-    e2 = run_file(culinary_data_file_path)
-    e3 = run_file(artistic_data_file_path)
-    e4 = run_file(lyrics_data_file_path)
+    std1 = run_file(medicine_data_file_path)
+    std2 = run_file(culinary_data_file_path)
+    std3 = run_file(artistic_data_file_path)
+    std4 = run_file(lyrics_data_file_path)
 
-    avg_e = (e1+e2+e3+e4)/4
+    print(f"First std: {std1*100}%")
+    print(f"Second std: {std2*100}%")
+    print(f"Third std: {std3*100}%")
+    print(f"First std: {std4*100}%")
 
-    print(f"Average error: {avg_e}")
