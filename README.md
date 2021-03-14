@@ -1,5 +1,8 @@
 # AI speech-to-text and text-to-speech validation
 
+- [gTTS](https://github.com/pndurette/gTTS)
+- [speech recognition](https://github.com/Uberi/speech_recognition)
+
 ## Docker setup
 
 ```bash

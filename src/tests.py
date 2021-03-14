@@ -1,7 +1,9 @@
 import os
+from math import sqrt
 
 from main_functions import *
 import pyttsx3
+
 
 def wer(r, h):
     """
@@ -30,31 +32,28 @@ def wer(r, h):
     """
     # initialisation
     import numpy
-    d = numpy.zeros((len(r)+1)*(len(h)+1), dtype=numpy.uint8)
-    d = d.reshape((len(r)+1, len(h)+1))
-    for i in range(len(r)+1):
-        for j in range(len(h)+1):
+    d = numpy.zeros((len(r) + 1) * (len(h) + 1), dtype=numpy.uint8)
+    d = d.reshape((len(r) + 1, len(h) + 1))
+    for i in range(len(r) + 1):
+        for j in range(len(h) + 1):
             if i == 0:
                 d[0][j] = j
             elif j == 0:
                 d[i][0] = i
 
     # computation
-    for i in range(1, len(r)+1):
-        for j in range(1, len(h)+1):
-            if r[i-1] == h[j-1]:
-                d[i][j] = d[i-1][j-1]
+    for i in range(1, len(r) + 1):
+        for j in range(1, len(h) + 1):
+            if r[i - 1] == h[j - 1]:
+                d[i][j] = d[i - 1][j - 1]
             else:
-                substitution = d[i-1][j-1] + 1
-                insertion    = d[i][j-1] + 1
-                deletion     = d[i-1][j] + 1
+                substitution = d[i - 1][j - 1] + 1
+                insertion = d[i][j - 1] + 1
+                deletion = d[i - 1][j] + 1
                 d[i][j] = min(substitution, insertion, deletion)
 
     return d[len(r)][len(h)]
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
 
 def speech_test(command):
     engine = pyttsx3.init()
@@ -88,11 +87,12 @@ def create_folder(folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-def run_file(file_path):
+
+def test_file(file_path):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Please create the file {file_path} with texts on separate lines")
-
-    acc_list = []
+    print(f"Testing {file_path}")
+    accuracy_list = []
 
     with open(file_path) as data_file:
         i = 1
@@ -103,61 +103,65 @@ def run_file(file_path):
             wav_path = f"{wav_folder}/test{i}.wav"
             try:
                 result = run_test(line.rstrip(), mp3_path, wav_path)
-            except Exception as e:
-                print("SKIP...")
-                continue
+            except FileNotFoundError:
+                result = ''
+            except AssertionError:
+                result = ''
+
             if not keep_audio:
-                os.remove(mp3_path)
-                os.remove(wav_path)
-            print(f"Initial Text {i}: {line}")
-            print(f"Decoded Text {i}: {result}")
+                if os.path.exists(mp3_path):
+                    os.remove(mp3_path)
+                if os.path.exists(wav_path):
+                    os.remove(wav_path)
 
             error = wer(line.split(), result.split())
 
-            accuracy = (len(line) - error) / len(line)
+            local_accuracy = (len(line) - error) / len(line)
 
-            acc_list.append(accuracy)
+            accuracy_list.append(local_accuracy)
 
-            accuracy_sum += accuracy
-            print(f"Accuracy {i}: {accuracy*100}%")
+            accuracy_sum += local_accuracy
+            if verbose:
+                print(f"Initial Text {i}: {line}")
+                print(f"Decoded Text {i}: {result}")
+            print(f"Accuracy {i}: {local_accuracy * 100:.3f}%")
 
             i += 1
 
         total_accuracy = accuracy_sum / (i - 1)
-        print(f"Average accuracy for {data_file}: {total_accuracy*100}%")
 
         std_dev = 0
+        for accuracy in accuracy_list:
+            std_dev += (accuracy - total_accuracy) ** 2
 
-        for ac in acc_list:
-            std_dev += (ac-total_accuracy)**2
-
-        std_dev /= len(acc_list)
-
-        return std_dev
+        std_dev /= len(accuracy_list)
+        std_dev = sqrt(std_dev)
+        return total_accuracy, std_dev
 
 
-if __name__ == "__main__":
-    keep_audio = True
-    files_folder = 'files'
-    mp3_folder = f'{files_folder}/mp3-files'
-    wav_folder = f'{files_folder}/wav-files'
-
+def main():
     create_folder(files_folder)
     create_folder(mp3_folder)
     create_folder(wav_folder)
 
-    medicine_data_file_path = f'{files_folder}/medicine_data.txt'
-    culinary_data_file_path = f'{files_folder}/culinary_data.txt'
-    artistic_data_file_path = f'{files_folder}/artistic_data.txt'
-    lyrics_data_file_path = f'{files_folder}/lyrics_data.txt'
+    files = ['medicine_data', 'culinary_data', 'artistic_data', 'lyrics_data']
 
-    std1 = run_file(medicine_data_file_path)
-    std2 = run_file(culinary_data_file_path)
-    std3 = run_file(artistic_data_file_path)
-    std4 = run_file(lyrics_data_file_path)
+    results = []
 
-    print(f"First std: {std1*100}%")
-    print(f"Second std: {std2*100}%")
-    print(f"Third std: {std3*100}%")
-    print(f"First std: {std4*100}%")
+    for file in files:
+        file_path = f'{files_folder}/{file}.txt'
+        total_accuracy, std_dev = test_file(file_path)
+        print(f"Average accuracy for {file_path}: {total_accuracy * 100:.3f}, Standard deviation {std_dev * 100:.3f}")
+        results.append((file_path, total_accuracy, std_dev))
 
+    for result in results:
+        print(f"Average accuracy for {result[0]}: {result[1] * 100:.3f}, Standard deviation {result[2] * 100:.3f}")
+
+
+if __name__ == "__main__":
+    keep_audio = False
+    verbose = False
+    files_folder = 'files'
+    mp3_folder = f'{files_folder}/mp3-files'
+    wav_folder = f'{files_folder}/wav-files'
+    main()
