@@ -154,6 +154,7 @@ def main():
         print(f"Average accuracy for {file_path}: {total_accuracy * 100:.3f}, Standard deviation {std_dev * 100:.3f}")
         results.append((file_path, total_accuracy, std_dev))
 
+    print("\nFinal results:")
     for result in results:
         print(f"Average accuracy for {result[0]}: {result[1] * 100:.3f}, Standard deviation {result[2] * 100:.3f}")
 
