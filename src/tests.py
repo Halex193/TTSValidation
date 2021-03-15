@@ -1,58 +1,10 @@
 import os
 from math import sqrt
+import fastwer
+import re
 
 from main_functions import *
 import pyttsx3
-
-
-def wer(r, h):
-    """
-    Calculation of WER with Levenshtein distance.
-
-    Works only for iterables up to 254 elements (uint8).
-    O(nm) time ans space complexity.
-
-    Parameters
-    ----------
-    r : list
-    h : list
-
-    Returns
-    -------
-    int
-
-    Examples
-    --------
-    >>> wer("who is there".split(), "is there".split())
-    1
-    >>> wer("who is there".split(), "".split())
-    3
-    >>> wer("".split(), "who is there".split())
-    3
-    """
-    # initialisation
-    import numpy
-    d = numpy.zeros((len(r) + 1) * (len(h) + 1), dtype=numpy.uint8)
-    d = d.reshape((len(r) + 1, len(h) + 1))
-    for i in range(len(r) + 1):
-        for j in range(len(h) + 1):
-            if i == 0:
-                d[0][j] = j
-            elif j == 0:
-                d[i][0] = i
-
-    # computation
-    for i in range(1, len(r) + 1):
-        for j in range(1, len(h) + 1):
-            if r[i - 1] == h[j - 1]:
-                d[i][j] = d[i - 1][j - 1]
-            else:
-                substitution = d[i - 1][j - 1] + 1
-                insertion = d[i][j - 1] + 1
-                deletion = d[i - 1][j] + 1
-                d[i][j] = min(substitution, insertion, deletion)
-
-    return d[len(r)][len(h)]
 
 
 def speech_test(command):
@@ -96,7 +48,7 @@ def test_file(file_path):
 
     with open(file_path) as data_file:
         i = 1
-        accuracy_sum = 0
+        accuracy_sum = (0, 0)
 
         for line in data_file:
             mp3_path = f"{mp3_folder}/test{i}.mp3"
@@ -114,29 +66,34 @@ def test_file(file_path):
                 if os.path.exists(wav_path):
                     os.remove(wav_path)
 
-            error = wer(line.split(), result.split())
+            word_count1 = len(re.findall(r'\w+', line))
+            length1 = len(line)
+            length2 = len(result)
+            if word_count1 == 0 or length2 == 0:
+                error = (100, 100)
+            else:
+                error = (fastwer.score([line], [result]) / word_count1, fastwer.score([line], [result], True) / length1)
 
-            local_accuracy = (len(line) - error) / len(line)
+            local_accuracy = (100 - error[0], 100-error[1])
 
             accuracy_list.append(local_accuracy)
 
-            accuracy_sum += local_accuracy
+            accuracy_sum = (accuracy_sum[0] + local_accuracy[0], accuracy_sum[1] + local_accuracy[1])
             if verbose:
                 print(f"Initial Text {i}: {line}")
                 print(f"Decoded Text {i}: {result}")
-            print(f"Accuracy {i}: {local_accuracy * 100:.3f}%")
+            print(f"Accuracy {i}: WER - {local_accuracy[0]:.3f}%, CER - {local_accuracy[1]:.3f}%")
 
             i += 1
 
-        total_accuracy = accuracy_sum / (i - 1)
+        final_accuracy = (accuracy_sum[0] / (i - 1), accuracy_sum[1] / (i - 1))
 
-        std_dev = 0
+        std_dev = (0, 0)
         for accuracy in accuracy_list:
-            std_dev += (accuracy - total_accuracy) ** 2
+            std_dev = (std_dev[0] + (accuracy[0] - final_accuracy[0]) ** 2, std_dev[1] + (accuracy[1] - final_accuracy[1]) ** 2)
 
-        std_dev /= len(accuracy_list)
-        std_dev = sqrt(std_dev)
-        return total_accuracy, std_dev
+        std_dev = (sqrt(std_dev[0] / len(accuracy_list)), sqrt(std_dev[1] / len(accuracy_list)))
+        return final_accuracy, std_dev
 
 
 def main():
@@ -151,12 +108,18 @@ def main():
     for file in files:
         file_path = f'{files_folder}/{file}.txt'
         total_accuracy, std_dev = test_file(file_path)
-        print(f"Average accuracy for {file_path}: {total_accuracy * 100:.3f}, Standard deviation {std_dev * 100:.3f}")
+        print(f"Dataset {file_path}:")
+        print(f"WER - Accuracy: {total_accuracy[0]:.3f}%, Standard deviation: {std_dev[0]:.3f}%")
+        print(f"CER - Accuracy: {total_accuracy[1]:.3f}%, Standard deviation: {std_dev[1]:.3f}%")
+        print()
         results.append((file_path, total_accuracy, std_dev))
 
     print("\nFinal results:")
     for result in results:
-        print(f"Average accuracy for {result[0]}: {result[1] * 100:.3f}, Standard deviation {result[2] * 100:.3f}")
+        print(f"Dataset {result[0]}:")
+        print(f"WER - Accuracy: {result[1][0]:.3f}%, Standard deviation: {result[2][0]:.3f}%")
+        print(f"CER - Accuracy: {result[1][1]:.3f}%, Standard deviation: {result[2][1]:.3f}%")
+        print()
 
 
 if __name__ == "__main__":
